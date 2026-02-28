@@ -1,2 +1,2 @@
 # node
-not js
+not js, but codable workflows. All based around nodes.
