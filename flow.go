@@ -9,29 +9,29 @@ type (
 		End    string `json:"end"`
 	}
 
-	SimpleFlow struct {
+	SimpleFlow[T any] struct {
 		name         string
-		participants map[string]Node
+		participants map[string]Node[T]
 		graph        []*Tripplet
-		start        Node
+		start        Node[T]
 	}
 
-	FlowBuilder interface {
-		Relation(start Node, action Action, end Node)
+	FlowBuilder[T any] interface {
+		Relation(start Node[T], action Action, end Node[T])
 	}
 )
 
 var (
-	_ FlowBuilder = &SimpleFlow{}
-	_ Node        = &SimpleFlow{}
+	_ FlowBuilder[string] = &SimpleFlow[string]{}
+	_ Node[string]        = &SimpleFlow[string]{}
 )
 
-func NewFlow(name string, start Node, handler func(handler FlowBuilder)) Node {
-	dag := make(map[string]Node)
+func NewFlow[T any](name string, start Node[T], handler func(handler FlowBuilder[T])) Node[T] {
+	dag := make(map[string]Node[T])
 
 	dag[start.Name()] = start
 
-	flow := &SimpleFlow{
+	flow := &SimpleFlow[T]{
 		name:         name,
 		start:        start,
 		participants: dag,
@@ -42,7 +42,7 @@ func NewFlow(name string, start Node, handler func(handler FlowBuilder)) Node {
 	return flow
 }
 
-func (s *SimpleFlow) Relation(start Node, action Action, end Node) {
+func (s *SimpleFlow[T]) Relation(start Node[T], action Action, end Node[T]) {
 	t := &Tripplet{
 		Start:  start.Name(),
 		Action: action,
@@ -54,11 +54,11 @@ func (s *SimpleFlow) Relation(start Node, action Action, end Node) {
 	s.participants[end.Name()] = end
 }
 
-func (s *SimpleFlow) Name() string {
+func (s *SimpleFlow[T]) Name() string {
 	return s.name
 }
 
-func (s *SimpleFlow) Exec(ctx map[string]any) (Action, error) {
+func (s *SimpleFlow[T]) Exec(ctx T) (Action, error) {
 	action, err := Execute(s.start, ctx)
 
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *SimpleFlow) Exec(ctx map[string]any) (Action, error) {
 	return action, err
 }
 
-func (s *SimpleFlow) next(current string, result Action) Node {
+func (s *SimpleFlow[T]) next(current string, result Action) Node[T] {
 	next := slice.Head(slice.Filter(s.graph, func(t *Tripplet) bool {
 		return t.Start == current && t.Action == result
 	}))

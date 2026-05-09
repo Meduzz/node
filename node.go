@@ -8,14 +8,14 @@ type (
 		// TODO timeout?
 	}
 
-	Node interface {
+	Node[T any] interface {
 		Name() string
-		Exec(map[string]any) (Action, error)
+		Exec(ctx T) (Action, error)
 	}
 
-	NodeLifecycleHooks interface {
-		Pre(map[string]any) error
-		Post(map[string]any, Action, error) (Action, error)
+	NodeLifecycleHooks[T any] interface {
+		Pre(ctx T) error
+		Post(ctx T, action Action, err error) (Action, error)
 	}
 
 	NodeSettingsHooks interface {
