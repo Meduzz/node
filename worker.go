@@ -1,8 +1,8 @@
 package node
 
-func Execute(node Node, ctx map[string]any) (Action, error) {
+func Execute[T any](node Node[T], ctx T) (Action, error) {
 	var err error
-	lc, hasLc := node.(NodeLifecycleHooks)
+	lc, hasLc := node.(NodeLifecycleHooks[T])
 
 	if hasLc {
 		err = lc.Pre(ctx)

@@ -1,19 +1,14 @@
 package node
 
-import (
-	"fmt"
-	"reflect"
-)
-
-type Iterator struct {
+type Iterator[T any] struct {
 	fieldName     string
 	itemKey       string
-	child         Node
+	child         Node[T]
 	successAction Action
 }
 
-func NewIterator(fieldName, itemKey string, child Node, successAction Action) *Iterator {
-	return &Iterator{
+func NewIterator[T any](fieldName, itemKey string, child Node[T], successAction Action) *Iterator[T] {
+	return &Iterator[T]{
 		fieldName:     fieldName,
 		itemKey:       itemKey,
 		child:         child,
@@ -21,28 +16,17 @@ func NewIterator(fieldName, itemKey string, child Node, successAction Action) *I
 	}
 }
 
-func (i *Iterator) Name() string {
+func (i *Iterator[T]) Name() string {
 	return "iterator"
 }
 
-func (i *Iterator) Exec(ctx map[string]any) (Action, error) {
-	val, ok := ctx[i.fieldName]
+func (i *Iterator[T]) Exec(ctx []T) (Action, error) {
 
-	if !ok {
-		return Error, fmt.Errorf("field %s not found in context", i.fieldName)
-	}
+	for idx := range ctx {
+		item := ctx[idx]
 
-	v := reflect.ValueOf(val)
+		action, err := Execute(i.child, item)
 
-	if v.Kind() != reflect.Slice {
-		return Error, fmt.Errorf("field %s is not a slice", i.fieldName)
-	}
-
-	for idx := 0; idx < v.Len(); idx++ {
-		item := v.Index(idx).Interface()
-		ctx[i.itemKey] = item
-
-		action, err := Execute(i.child, ctx)
 		if action != i.successAction {
 			if action == "" {
 				return Error, err

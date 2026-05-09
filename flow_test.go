@@ -10,26 +10,25 @@ import (
 type (
 	sprinter struct {
 		format string
-		input  string
 		target string
+		value  string
 	}
 )
 
 var (
-	_     node.Node = &sprinter{}
-	INPUT           = "input"
-	HELLO           = "hello"
-	BYE             = "bye"
+	_     node.Node[string] = &sprinter{}
+	HELLO                   = "hello"
+	BYE                     = "bye"
 )
 
 func TestFlows(t *testing.T) {
-	start := &sprinter{"Hello %v!", INPUT, HELLO}
-	end := &sprinter{"Bye cruel %v!", INPUT, BYE}
-	printer := node.NewFlow("test", start, func(handler node.FlowBuilder) {
+	start := &sprinter{"Hello %v!", HELLO, ""}
+	end := &sprinter{"Bye cruel %v!", BYE, ""}
+	printer := node.NewFlow("test", start, func(handler node.FlowBuilder[string]) {
 		handler.Relation(start, node.Success, end)
 	})
-	ctx := make(map[string]any)
-	ctx[INPUT] = "world"
+
+	ctx := "world"
 
 	action, err := printer.Exec(ctx)
 
@@ -41,35 +40,17 @@ func TestFlows(t *testing.T) {
 		t.Errorf("Action was not %s but %s", node.Success, action)
 	}
 
-	result, exists := ctx[HELLO]
-
-	if !exists {
-		t.Error("HELLO was not set")
+	if start.value != "Hello world!" {
+		t.Errorf("result was not the expected: '%v'", start.value)
 	}
 
-	if result != "Hello world!" {
-		t.Errorf("result was not the expected: '%v'", result)
-	}
-
-	result, exists = ctx[BYE]
-
-	if !exists {
-		t.Error("BYE was not set")
-	}
-
-	if result != "Bye cruel world!" {
-		t.Errorf("result was not the expected: '%v'", result)
+	if end.value != "Bye cruel world!" {
+		t.Errorf("result was not the expected: '%v'", end.value)
 	}
 }
 
-func (s *sprinter) Exec(ctx map[string]any) (node.Action, error) {
-	anyInput, exists := ctx[s.input]
-
-	if !exists {
-		return node.Error, fmt.Errorf("%s was not set", s.input)
-	}
-
-	ctx[s.target] = fmt.Sprintf(s.format, anyInput)
+func (s *sprinter) Exec(ctx string) (node.Action, error) {
+	s.value = fmt.Sprintf(s.format, ctx)
 	return node.Success, nil
 }
 
